@@ -1,0 +1,11 @@
+# Loki 数据
+loki/data/
+
+# Grafana 数据
+grafana/data/
+
+# 系统文件
+.DS_Store
+*.swp
+*.swo
+*~

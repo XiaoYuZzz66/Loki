@@ -1,0 +1,84 @@
+# 日志中心 - 服务器 A（host 网络，避免 iptables/bridge 问题）
+# 启动：cd log-center && docker compose up -d
+
+services:
+  init-perms:
+    image: alpine:3.19
+    container_name: log-center-init
+    network_mode: host
+    volumes:
+      - ./loki/data:/loki
+      - ./grafana/data:/grafana
+    command: >
+      sh -c "mkdir -p /loki/chunks /loki/rules /loki/compactor /loki/tsdb-index /loki/tsdb-cache
+      && chown -R 10001:10001 /loki
+      && chown -R 472:472 /grafana"
+    restart: "no"
+
+  loki:
+    image: grafana/loki:2.9.6
+    container_name: log-center-loki
+    restart: unless-stopped
+    network_mode: host
+    user: "10001:10001"
+    depends_on:
+      init-perms:
+        condition: service_completed_successfully
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - ./loki/data:/loki
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    mem_limit: 1g
+    memswap_limit: 1g
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: log-center-grafana
+    restart: unless-stopped
+    network_mode: host
+    user: "472:472"
+    depends_on:
+      init-perms:
+        condition: service_completed_successfully
+      loki:
+        condition: service_started
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_HTTP_PORT: "3000"
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    mem_limit: 512m
+    memswap_limit: 512m
+
+  fluent-bit:
+    image: fluent/fluent-bit:3.0.7
+    container_name: log-center-fluent-bit
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      loki:
+        condition: service_started
+    environment:
+      GAOBAO_HOST: server-a
+      GAOBAO_ENV: pre
+    volumes:
+      - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
+      - ./fluent-bit/map_app_labels.lua:/fluent-bit/etc/map_app_labels.lua:ro
+      - /work/projectData/gaobao:/work/projectData/gaobao:ro
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    mem_limit: 256m
