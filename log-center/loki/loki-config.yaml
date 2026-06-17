@@ -46,6 +46,8 @@ limits_config:
   ingestion_burst_size_mb: 64
   max_streams_per_user: 50000
   max_line_size: 256kb
+  per_stream_rate_limit: 16MB
+  per_stream_rate_limit_burst: 32MB
 
 compactor:
   working_directory: /loki/compactor

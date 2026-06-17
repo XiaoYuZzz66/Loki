@@ -1,0 +1,72 @@
+# Fluent Bit - 183 服务器专用配置模板
+#
+# 采集 /usr/projectData/api/ 和 /usr/projectData/admin/ 下的 blm-* 容器日志
+# 此文件为模板，部署时由 deploy-183.sh 替换占位符生成实际配置。
+# 占位符：
+#   __LOKI_HOST__  = 日志中心 Loki 的内网 IP（服务器 A 的地址）
+
+[SERVICE]
+    Flush         5
+    Daemon        off
+    Log_Level     info
+    Parsers_File  parsers.conf
+    HTTP_Server   On
+    HTTP_Listen   0.0.0.0
+    HTTP_Port     2020
+
+# api 类服务日志
+[INPUT]
+    Name              tail
+    Tag               app.blm
+    Path              /usr/projectData/api/*/data/logs/*/*.log
+    Parser            gaobao_app
+    Path_Key          filepath
+    Refresh_Interval  5
+    Rotate_Wait       30
+    Mem_Buf_Limit     20MB
+    Skip_Long_Lines   On
+
+# admin 类服务日志
+[INPUT]
+    Name              tail
+    Tag               app.blm
+    Path              /usr/projectData/admin/*/data/logs/*/*.log
+    Exclude_Path      /usr/projectData/admin/user/data/logs/blm-admin-user/*.log
+    Parser            gaobao_app
+    Path_Key          filepath
+    Refresh_Interval  5
+    Rotate_Wait       30
+    Mem_Buf_Limit     20MB
+    Skip_Long_Lines   On
+
+# 特殊路径：admin-layer-activity
+[INPUT]
+    Name              tail
+    Tag               app.blm
+    Path              /usr/projectData/admin/data/layer-activity/logs/*/*.log
+    Parser            gaobao_app
+    Path_Key          filepath
+    Refresh_Interval  5
+    Rotate_Wait       30
+    Mem_Buf_Limit     10MB
+    Skip_Long_Lines   On
+
+[FILTER]
+    Name   lua
+    Match  app.blm
+    script /fluent-bit/etc/map_app_labels_183.lua
+    call   cb_map
+
+[FILTER]
+    Name          record_modifier
+    Match         app.blm
+    Record        host ${GAOBAO_HOST}
+    Record        env ${GAOBAO_ENV}
+
+[OUTPUT]
+    Name                   loki
+    Match                  app.blm
+    Host                   __LOKI_HOST__
+    Port                   3100
+    Labels                 job=gaobao, env=${GAOBAO_ENV}, host=${GAOBAO_HOST}, container=$container_name, source=app_file
+    Auto_Kubernetes_Labels off
