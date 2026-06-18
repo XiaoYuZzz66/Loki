@@ -76,6 +76,7 @@ services:
       - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
       - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
       - ./fluent-bit/map_app_labels.lua:/fluent-bit/etc/map_app_labels.lua:ro
+      - ./fluent-bit/map_huiyuce_labels.lua:/fluent-bit/etc/map_huiyuce_labels.lua:ro
       - /work/projectData/gaobao:/work/projectData/gaobao:ro
     deploy:
       resources:
