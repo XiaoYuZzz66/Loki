@@ -31,7 +31,6 @@
     Name              tail
     Tag               app.blm
     Path              /usr/projectData/admin/*/data/logs/*/*.log
-    Exclude_Path      /usr/projectData/admin/user/data/logs/blm-admin-user/*.log
     Parser            gaobao_app
     Path_Key          filepath
     Refresh_Interval  5
