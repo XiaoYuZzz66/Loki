@@ -83,9 +83,9 @@ sed "s|__LOKI_HOST__|${LOKI_HOST}|g" "$TEMPLATE" > "$DEPLOY_DIR/fluent-bit.conf"
 log_info "配置已生成: $DEPLOY_DIR/fluent-bit.conf (Loki Host: $LOKI_HOST)"
 
 # ---- Step 3: 复制 parsers 和 lua 脚本 ----
-log_info "复制 parsers.conf 和 map_app_labels_183.lua..."
+log_info "复制 parsers.conf 和 map_huiyuce_labels.lua..."
 cp "$REPO_DIR/fluent-bit/parsers.conf"           "$DEPLOY_DIR/parsers.conf"
-cp "$REPO_DIR/fluent-bit/map_app_labels_183.lua" "$DEPLOY_DIR/map_app_labels_183.lua"
+cp "$REPO_DIR/fluent-bit/map_huiyuce_labels.lua" "$DEPLOY_DIR/map_huiyuce_labels.lua"
 
 # ---- Step 4: 检查日志路径是否存在 ----
 if [[ ! -d "$LOG_BASE" ]]; then
@@ -110,7 +110,7 @@ docker run -d \
     -e GAOBAO_ENV="$ENV_VAL" \
     -v "$DEPLOY_DIR/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro" \
     -v "$DEPLOY_DIR/parsers.conf:/fluent-bit/etc/parsers.conf:ro" \
-    -v "$DEPLOY_DIR/map_app_labels_183.lua:/fluent-bit/etc/map_app_labels_183.lua:ro" \
+    -v "$DEPLOY_DIR/map_huiyuce_labels.lua:/fluent-bit/etc/map_huiyuce_labels.lua:ro" \
     -v "${LOG_BASE}:${LOG_BASE}:ro" \
     --memory=512m \
     --memory-swap=512m \
