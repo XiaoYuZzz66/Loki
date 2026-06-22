@@ -1,15 +1,17 @@
 #!/bin/bash
 # ============================================================
-# 日志中心 - 183 服务器专用部署脚本
+# 日志中心 - gaobao 项目远程部署脚本
 #
-# 在 192.168.1.183 上执行，自动完成 Fluent Bit 容器的配置和启动。
-# 采集 /usr/projectData/api/ 和 /usr/projectData/admin/ 下的 blm-* 日志。
+# 在 gaobao 服务器上执行，自动完成 Fluent Bit 容器的配置和启动。
+# 采集 /work/projectData/gaobao/api/ 下的 gaobao-* 容器日志。
+#
+# 适用服务器：96、14、185
 #
 # 用法：
-#   bash deploy-183.sh --loki-host <IP> --hostname <name> --env <pre|prod>
+#   bash deploy-gaobao.sh --loki-host <IP> --hostname <name> --env <pre|prod>
 #
 # 示例：
-#   bash deploy-183.sh --loki-host 192.168.1.185 --hostname server-b --env pre
+#   bash deploy-gaobao.sh --loki-host 129.204.182.195 --hostname server-d --env prod
 # ============================================================
 
 set -euo pipefail
@@ -17,12 +19,14 @@ set -euo pipefail
 # ---- 参数默认值 ----
 LOKI_HOST=""
 HOSTNAME_VAL=""
-ENV_VAL="pre"
+ENV_VAL="prod"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 DEPLOY_DIR="/work/log-center-fluent-bit"
 FB_IMAGE="fluent/fluent-bit:3.0.7"
-LOG_BASE="/usr/projectData"
+LOG_BASE="/work/projectData/gaobao"
+TEMPLATE_NAME="fluent-bit-gaobao-prod.conf.template"
+LUA_FILE="map_gaobao_labels.lua"
 
 # ---- 颜色输出 ----
 RED='\033[0;31m'
@@ -72,7 +76,7 @@ mkdir -p "$DEPLOY_DIR"
 # ---- Step 2: 从模板生成配置文件 ----
 log_info "从模板生成 Fluent Bit 配置..."
 
-TEMPLATE="$REPO_DIR/fluent-bit/fluent-bit-183.conf.template"
+TEMPLATE="$REPO_DIR/fluent-bit/$TEMPLATE_NAME"
 if [[ ! -f "$TEMPLATE" ]]; then
     log_error "模板文件不存在: $TEMPLATE"
     log_error "请确保已将 log-center 目录复制到本机"
@@ -83,13 +87,13 @@ sed "s|__LOKI_HOST__|${LOKI_HOST}|g" "$TEMPLATE" > "$DEPLOY_DIR/fluent-bit.conf"
 log_info "配置已生成: $DEPLOY_DIR/fluent-bit.conf (Loki Host: $LOKI_HOST)"
 
 # ---- Step 3: 复制 parsers 和 lua 脚本 ----
-log_info "复制 parsers.conf 和 map_huiyuce_labels.lua..."
-cp "$REPO_DIR/fluent-bit/parsers.conf"           "$DEPLOY_DIR/parsers.conf"
-cp "$REPO_DIR/fluent-bit/map_huiyuce_labels.lua" "$DEPLOY_DIR/map_huiyuce_labels.lua"
+log_info "复制 parsers.conf 和 $LUA_FILE..."
+cp "$REPO_DIR/fluent-bit/parsers.conf"  "$DEPLOY_DIR/parsers.conf"
+cp "$REPO_DIR/fluent-bit/$LUA_FILE"     "$DEPLOY_DIR/$LUA_FILE"
 
 # ---- Step 4: 检查日志路径是否存在 ----
-if [[ ! -d "$LOG_BASE" ]]; then
-    log_warn "日志根目录不存在: $LOG_BASE"
+if [[ ! -d "$LOG_BASE/api" ]]; then
+    log_warn "日志目录不存在: $LOG_BASE/api"
     log_warn "Fluent Bit 启动后不会报错，但在目录创建前不会采集任何日志"
 fi
 
@@ -110,8 +114,8 @@ docker run -d \
     -e GAOBAO_ENV="$ENV_VAL" \
     -v "$DEPLOY_DIR/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro" \
     -v "$DEPLOY_DIR/parsers.conf:/fluent-bit/etc/parsers.conf:ro" \
-    -v "$DEPLOY_DIR/map_huiyuce_labels.lua:/fluent-bit/etc/map_huiyuce_labels.lua:ro" \
-    -v "${LOG_BASE}:${LOG_BASE}:ro" \
+    -v "$DEPLOY_DIR/$LUA_FILE:/fluent-bit/etc/$LUA_FILE:ro" \
+    -v "${LOG_BASE}/api:${LOG_BASE}/api:ro" \
     --memory=512m \
     --memory-swap=512m \
     "$FB_IMAGE"
@@ -152,8 +156,6 @@ log_info "  环境     : $ENV_VAL"
 log_info "  Loki     : $LOKI_HOST:3100"
 log_info "  容器名   : $CONTAINER_NAME"
 log_info "  日志路径 : ${LOG_BASE}/api/*/data/logs/*/*.log"
-log_info "             ${LOG_BASE}/admin/*/data/logs/*/*.log"
-log_info "             ${LOG_BASE}/admin/data/layer-activity/logs/*/*.log"
 log_info "============================================"
 log_info ""
 log_info "常用命令："

@@ -1,7 +1,8 @@
-# Fluent Bit - 183 服务器专用配置模板（huiyuce_app 项目）
+# Fluent Bit - huiyuce_app 项目远程采集配置模板
 #
-# 采集 /usr/projectData/api/ 和 /usr/projectData/admin/ 下的 blm-* 容器日志
-# 此文件为模板，部署时由 deploy-183.sh 替换占位符生成实际配置。
+# 适用于生产环境 127 等 huiyuce_app 服务器。
+# 采集 /work/projectData/api/ 和 /work/projectData/admin/ 下的 blm-* 容器日志。
+# 此文件为模板，部署时由 deploy-huiyuce.sh 替换占位符生成实际配置。
 # 占位符：
 #   __LOKI_HOST__  = 日志中心 Loki 的内网 IP（服务器 A 的地址）
 
@@ -18,7 +19,7 @@
 [INPUT]
     Name              tail
     Tag               app.huiyuce
-    Path              /usr/projectData/api/*/data/logs/*/*.log
+    Path              /work/projectData/api/*/data/logs/*/*.log
     Parser            huiyuce_app
     Path_Key          filepath
     Refresh_Interval  5
@@ -30,24 +31,12 @@
 [INPUT]
     Name              tail
     Tag               app.huiyuce
-    Path              /usr/projectData/admin/*/data/logs/*/*.log
+    Path              /work/projectData/admin/*/data/logs/*/*.log
     Parser            huiyuce_app
     Path_Key          filepath
     Refresh_Interval  5
     Rotate_Wait       30
     Mem_Buf_Limit     20MB
-    Skip_Long_Lines   On
-
-# 特殊路径：admin-layer-activity
-[INPUT]
-    Name              tail
-    Tag               app.huiyuce
-    Path              /usr/projectData/admin/data/layer-activity/logs/*/*.log
-    Parser            huiyuce_app
-    Path_Key          filepath
-    Refresh_Interval  5
-    Rotate_Wait       30
-    Mem_Buf_Limit     10MB
     Skip_Long_Lines   On
 
 [FILTER]

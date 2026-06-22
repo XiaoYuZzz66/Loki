@@ -1,5 +1,6 @@
 # 日志中心 - 服务器 A（host 网络，避免 iptables/bridge 问题）
-# 启动：cd log-center && docker compose up -d
+# 生产环境部署目录：/work/projectData/log-center
+# 启动：cd /work/projectData/log-center && docker compose up -d
 
 services:
   init-perms:
@@ -75,8 +76,9 @@ services:
     volumes:
       - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
       - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
-      - ./fluent-bit/map_gaobao_labels.lua:/fluent-bit/etc/map_gaobao_labels.lua:ro
-      - /work/projectData/gaobao:/work/projectData/gaobao:ro
+      - ./fluent-bit/map_huiyuce_labels.lua:/fluent-bit/etc/map_huiyuce_labels.lua:ro
+      - /work/projectData/api:/work/projectData/api:ro
+      - /work/projectData/admin:/work/projectData/admin:ro
     deploy:
       resources:
         limits:

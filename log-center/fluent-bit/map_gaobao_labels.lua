@@ -17,6 +17,7 @@ local parent_map = {
     ["blm-file"]    = "gaobao-file",
     ["blm-job"]     = "gaobao-job",
     ["blm-zhiyuan"] = "gaobao-zhiyuan",
+    ["blm-oms"]     = "gaobao-oms",
 }
 
 function cb_map(tag, timestamp, record)
